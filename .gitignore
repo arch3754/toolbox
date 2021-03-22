@@ -1,0 +1,5 @@
+.idea/
+var/
+.DS_Store
+.store/
+go.sum
