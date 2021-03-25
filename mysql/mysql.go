@@ -17,7 +17,12 @@ type MySQLClient struct {
 	*xorm.Engine
 	Config *MySQLConf
 }
-type ParamAnd struct {
+
+type Query struct {
+	Page       PageParam    `json:"page"`
+	Conditions []*Condition `json:"conditions"`
+}
+type Condition struct {
 	Col       string      `json:"col"`
 	Condition string      `json:"condition"`
 	Value     interface{} `json:"value"`
@@ -40,7 +45,7 @@ func NewMySQLClient(conf *MySQLConf) (*MySQLClient, error) {
 	return &MySQLClient{db, conf}, nil
 }
 
-func (c *MySQLClient) GetByParamAnd(parmas []*ParamAnd, obj interface{}) (bool, error) {
+func (c *MySQLClient) GetByCondition(parmas []*Condition, obj interface{}) (bool, error) {
 	switch len(parmas) {
 	case 0:
 		return c.Get(obj)
@@ -52,10 +57,10 @@ func (c *MySQLClient) GetByParamAnd(parmas []*ParamAnd, obj interface{}) (bool, 
 		return sessionAnd(sess, parmas).Get(obj)
 	}
 }
-func (c *MySQLClient) GetBySessionParamAnd(sess *xorm.Session, parmas []*ParamAnd, obj interface{}) (bool, error) {
+func (c *MySQLClient) GetBySessionCondition(sess *xorm.Session, parmas []*Condition, obj interface{}) (bool, error) {
 	return sessionAnd(sess, parmas).Get(obj)
 }
-func (c *MySQLClient) FindByParamAnd(parmas []*ParamAnd, page *PageParam, obj interface{}) (int64, error) {
+func (c *MySQLClient) FindByCondition(parmas []*Condition, page *PageParam, obj interface{}) (int64, error) {
 	switch len(parmas) {
 	case 0:
 		return c.Limit(page.Limit, page.Offset).FindAndCount(obj)
@@ -67,7 +72,7 @@ func (c *MySQLClient) FindByParamAnd(parmas []*ParamAnd, page *PageParam, obj in
 		return sessionAnd(sess, parmas).Limit(page.Limit, page.Offset).FindAndCount(obj)
 	}
 }
-func FindBySessionParamAnd(sess *xorm.Session, parmas []*ParamAnd, page *PageParam, obj interface{}) (int64, error) {
+func FindBySessionCondition(sess *xorm.Session, parmas []*Condition, page *PageParam, obj interface{}) (int64, error) {
 	return sessionAnd(sess, parmas).Limit(page.Limit, page.Offset).FindAndCount(obj)
 }
 
@@ -75,7 +80,7 @@ func InsertBySession(sess *xorm.Session, obj interface{}) error {
 	_, err := sess.Insert(obj)
 	return err
 }
-func (c *MySQLClient) UpdateByParamAnd(parmas []*ParamAnd, obj interface{}) error {
+func (c *MySQLClient) UpdateByCondition(parmas []*Condition, obj interface{}) error {
 	switch len(parmas) {
 	case 0:
 		return fmt.Errorf("update failed. param lenth is 0")
@@ -89,11 +94,11 @@ func (c *MySQLClient) UpdateByParamAnd(parmas []*ParamAnd, obj interface{}) erro
 		return err
 	}
 }
-func UpdateBySessionParamAnd(sess *xorm.Session, parmas []*ParamAnd, obj interface{}) error {
+func UpdateBySessionCondition(sess *xorm.Session, parmas []*Condition, obj interface{}) error {
 	_, err := sessionAnd(sess, parmas).AllCols().Update(obj)
 	return err
 }
-func (c *MySQLClient) DeleteByParamAnd(parmas []*ParamAnd, obj interface{}) error {
+func (c *MySQLClient) DeleteByCondition(parmas []*Condition, obj interface{}) error {
 	switch len(parmas) {
 	case 0:
 		return fmt.Errorf("delete failed. param lenth is 0")
@@ -107,11 +112,11 @@ func (c *MySQLClient) DeleteByParamAnd(parmas []*ParamAnd, obj interface{}) erro
 		return err
 	}
 }
-func DeleteBySessionParamAnd(sess *xorm.Session, parmas []*ParamAnd, obj interface{}) error {
+func DeleteBySessionCondition(sess *xorm.Session, parmas []*Condition, obj interface{}) error {
 	_, err := sessionAnd(sess, parmas).Delete(obj)
 	return err
 }
-func sessionAnd(sess *xorm.Session, parmas []*ParamAnd) *xorm.Session {
+func sessionAnd(sess *xorm.Session, parmas []*Condition) *xorm.Session {
 	for _, v := range parmas {
 		sess = sess.Where(fmt.Sprintf("%v %s ?", v.Col, v.Condition), v.Value)
 	}
